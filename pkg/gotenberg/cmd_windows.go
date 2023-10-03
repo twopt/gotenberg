@@ -88,53 +88,6 @@ func (cmd Cmd) Wait() error {
 	return nil
 }
 
-// pipeOutput creates logs entries according to the process stdout and stderr.
-// It does nothing if the logging level is not debug.
-func (cmd Cmd) pipeOutput() error {
-	checkedEntry := cmd.logger.Check(zap.DebugLevel, "check for debug level before piping unix process output")
-	if checkedEntry == nil {
-		return nil
-	}
-
-	stdout, err := cmd.process.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("pipe unix process stdout: %w", err)
-	}
-
-	stderr, err := cmd.process.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("unix process sdterr: %w", err)
-	}
-
-	// logCommandOutput creates logs entries according to a reader
-	// (either stdout or stderr).
-	logCommandOutput := func(logger *zap.Logger, reader io.ReadCloser) {
-		r := bufio.NewReader(reader)
-		defer reader.Close()
-
-		for {
-			line, _, err := r.ReadLine()
-
-			if err != nil {
-				if err != io.EOF && !strings.Contains(err.Error(), "file already closed") {
-					logger.Error(fmt.Sprintf("pipe unix process output error: %s", err))
-				}
-
-				break
-			}
-
-			if len(line) != 0 {
-				logger.Debug(string(line))
-			}
-		}
-	}
-
-	go logCommandOutput(cmd.logger.Named("stdout"), stdout)
-	go logCommandOutput(cmd.logger.Named("stderr"), stderr)
-
-	return nil
-}
-
 // Exec executes the command and wait for its completion or until the context
 // is done. In any case, it kills the unix process and all its children.
 func (cmd Cmd) Exec() (int, error) {
@@ -181,6 +134,53 @@ func (cmd Cmd) Exec() (int, error) {
 
 		return 62, fmt.Errorf("context done: %w", cmd.ctx.Err())
 	}
+}
+
+// pipeOutput creates logs entries according to the process stdout and stderr.
+// It does nothing if the logging level is not debug.
+func (cmd Cmd) pipeOutput() error {
+	checkedEntry := cmd.logger.Check(zap.DebugLevel, "check for debug level before piping unix process output")
+	if checkedEntry == nil {
+		return nil
+	}
+
+	stdout, err := cmd.process.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("pipe unix process stdout: %w", err)
+	}
+
+	stderr, err := cmd.process.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("unix process sdterr: %w", err)
+	}
+
+	// logCommandOutput creates logs entries according to a reader
+	// (either stdout or stderr).
+	logCommandOutput := func(logger *zap.Logger, reader io.ReadCloser) {
+		r := bufio.NewReader(reader)
+		defer reader.Close()
+
+		for {
+			line, _, err := r.ReadLine()
+
+			if err != nil {
+				if err != io.EOF && !strings.Contains(err.Error(), "file already closed") {
+					logger.Error(fmt.Sprintf("pipe unix process output error: %s", err))
+				}
+
+				break
+			}
+
+			if len(line) != 0 {
+				logger.Debug(string(line))
+			}
+		}
+	}
+
+	go logCommandOutput(cmd.logger.Named("stdout"), stdout)
+	go logCommandOutput(cmd.logger.Named("stderr"), stderr)
+
+	return nil
 }
 
 // Kill kills the unix process and all its children without creating orphans.
