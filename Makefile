@@ -46,7 +46,7 @@ CHROMIUM_DENY_LIST="^file:///[^tmp].*"
 CHROMIUM_DISABLE_JAVASCRIPT=false
 CHROMIUM_DISABLE_ROUTES=false
 LIBREOFFICE_DISABLES_ROUTES=false
-LOG_LEVEL=info
+LOG_LEVEL=debug
 LOG_FORMAT=auto
 LOG_FIELDS_PREFIX=
 PDFENGINES_ENGINES=
@@ -158,3 +158,7 @@ release: ## Build the Gotenberg's Docker image for many platforms, then push it 
 	$(NOTO_COLOR_EMOJI_VERSION) \
 	$(PDFTK_VERSION) \
 	$(DOCKER_REPOSITORY)
+
+.PHONY: buildWindows
+buildWindows: ## Builds the gotenberg executable for windows
+	GOOS=windows GOARCH=amd64 go build -o gotenberg.exe -ldflags "-X 'github.com/gotenberg/gotenberg/v7/cmd.Version=$(GOTENBERG_VERSION)'" cmd/gotenberg/main.go
