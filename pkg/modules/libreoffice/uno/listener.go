@@ -77,28 +77,27 @@ func (listener *libreOfficeListener) start(logger *zap.Logger) error {
 		"--nologo",
 		"--nofirststartwizard",
 		"--norestore",
-		fmt.Sprintf("-env:UserInstallation=file://%s", userProfileDirPath),
+		// fmt.Sprintf("-env:UserInstallation=file://%s", userProfileDirPath), // causes issues when running dockerless on windows
 		fmt.Sprintf("--accept=socket,host=127.0.0.1,port=%d,tcpNoDelay=1;urp;StarOffice.ComponentContext", port),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), listener.startTimeout)
 	defer cancel()
-
 	cmd, err := gotenberg.CommandContext(ctx, logger, listener.binPath, args...)
 	if err != nil {
 		return fmt.Errorf("create LibreOffice listener command: %w", err)
 	}
 
 	// For whatever reason, LibreOffice requires a first start before being
-	// able to run as a daemon.
-	exitCode, err := cmd.Exec()
-	if err != nil && exitCode != 81 {
-		return fmt.Errorf("execute LibreOffice listener: %w", err)
-	}
+	// able to run as a daemon. // not true anymore?
+	// exitCode, err := cmd.Exec()
+	// if err != nil && exitCode != 81 {
+	// 	return fmt.Errorf("execute LibreOffice listener: %w", err)
+	// }
 
-	logger.Debug("got exit code 81, e.g., LibreOffice listener first start")
+	// logger.Debug("got exit code 81, e.g., LibreOffice listener first start")
 
-	// Second start (daemon).
+	// First start (daemon).
 	cmd = gotenberg.Command(logger, listener.binPath, args...)
 
 	err = cmd.Start()

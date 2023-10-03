@@ -33,6 +33,7 @@ var (
 // UNO is a module which provides an API to interact with LibreOffice.
 type UNO struct {
 	unoconvBinPath              string
+	pythonForUnoconvPath        string
 	libreOfficeBinPath          string
 	libreOfficeStartTimeout     time.Duration
 	libreOfficeRestartThreshold int
@@ -122,6 +123,14 @@ func (mod *UNO) Provision(ctx *gotenberg.Context) error {
 
 	mod.libreOfficeBinPath = libreOfficeBinPath
 
+	pythonForUnoconvPath, ok := os.LookupEnv("PYTHON_FOR_UNOCONV_PATH")
+	if !ok {
+		// PYTHON_FOR_UNOCONV_PATH is optional because it is for windows only
+		fmt.Println("PYTHON_FOR_UNOCONV_PATH environment variable is not set")
+	}
+
+	mod.pythonForUnoconvPath = pythonForUnoconvPath
+
 	loggerProvider, err := ctx.Module(new(gotenberg.LoggerProvider))
 	if err != nil {
 		return fmt.Errorf("get logger provider: %w", err)
@@ -156,6 +165,13 @@ func (mod UNO) Validate() error {
 	_, statErr = os.Stat(mod.libreOfficeBinPath)
 	if os.IsNotExist(statErr) {
 		err = multierr.Append(err, fmt.Errorf("LibreOffice binary path does not exist: %w", statErr))
+	}
+
+	if len(mod.pythonForUnoconvPath) > 0 {
+		_, statErr = os.Stat(mod.pythonForUnoconvPath)
+		if os.IsNotExist(statErr) {
+			err = multierr.Append(err, fmt.Errorf("Python binary path does not exist: %w", statErr))
+		}
 	}
 
 	return err
@@ -293,10 +309,21 @@ func (mod UNO) Checks() ([]health.CheckerOption, error) {
 // If there is a long-running LibreOffice listener, the conversion performance
 // improves substantially. However, it cannot perform parallel operations.
 func (mod UNO) PDF(ctx context.Context, logger *zap.Logger, inputPath, outputPath string, options Options) error {
-	args := []string{
-		"--no-launch",
-		"--format",
-		"pdf",
+	var args []string
+
+	if len(mod.pythonForUnoconvPath) > 0 { // for windows
+		args = []string{
+			mod.unoconvBinPath,
+			"--no-launch",
+			"--format",
+			"pdf",
+		}
+	} else {
+		args = []string{
+			"--no-launch",
+			"--format",
+			"pdf",
+		}
 	}
 
 	switch mod.libreOfficeRestartThreshold {
@@ -366,7 +393,14 @@ func (mod UNO) PDF(ctx context.Context, logger *zap.Logger, inputPath, outputPat
 
 	args = append(args, "--output", outputPath, inputPath)
 
-	cmd, err := gotenberg.CommandContext(ctx, logger, mod.unoconvBinPath, args...)
+	var command string
+	if len(mod.pythonForUnoconvPath) > 0 {
+		command = mod.pythonForUnoconvPath
+	} else {
+		command = mod.unoconvBinPath
+	}
+
+	cmd, err := gotenberg.CommandContext(ctx, logger, command, args...)
 	if err != nil {
 		return fmt.Errorf("create unoconv command: %w", err)
 	}
