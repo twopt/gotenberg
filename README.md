@@ -35,14 +35,15 @@ Head to the [documentation](https://gotenberg.dev/docs/getting-started/introduct
 3. [Download](https://github.com/unoconv/unoconv/releases) unoconv release, unzip and paste unoconv file into `C:\Program Files\LibreOffice\program` or anywhere you want 
 4. [Download](https://www.pdflabs.com/tools/pdftk-server/) + install PDFTK
 5. [Download](https://github.com/qpdf/qpdf/releases/) + install QPDF (choose the msvc64.exe asset)
-6. Update the commands in the step 7 to point to the correct paths for the installed programs
-7. Run ```
-    set "CHROMIUM_BIN_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
-	set "PYTHON_FOR_UNOCONV_PATH=C:\Program Files\LibreOffice\program\python.exe"
-	set "UNOCONV_BIN_PATH=C:\Program Files\LibreOffice\program\unoconv"
-	set "LIBREOFFICE_BIN_PATH=C:\Program Files\LibreOffice\program\soffice.exe"
-	set "PDFTK_BIN_PATH=C:\Program Files (x86)\PDFtk Server\bin\pdftk"
-	set "QPDF_BIN_PATH=C:\Program Files\qpdf 11.6.1\bin\qpdf"
+6. Update the commands below in step 7 to point to the correct paths for the installed programs if necessary
+7. Run
+```
+set "CHROMIUM_BIN_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+set "PYTHON_FOR_UNOCONV_PATH=C:\Program Files\LibreOffice\program\python.exe"
+set "UNOCONV_BIN_PATH=C:\Program Files\LibreOffice\program\unoconv"
+set "LIBREOFFICE_BIN_PATH=C:\Program Files\LibreOffice\program\soffice.exe"
+set "PDFTK_BIN_PATH=C:\Program Files (x86)\PDFtk Server\bin\pdftk"
+set "QPDF_BIN_PATH=C:\Program Files\qpdf 11.6.1\bin\qpdf"
 ```
 8. Build the gotenberg executable for windows `make buildWindows` (can be done on any machine)
 9. Run `gotenberg.exe --log-level=debug` or see the Makefile `run` command for more argument options
