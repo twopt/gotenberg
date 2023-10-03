@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/gotenberg/gotenberg/v7/pkg/gotenberg"
@@ -43,9 +44,10 @@ func (engine *QPDF) Provision(_ *gotenberg.Context) error {
 }
 
 // Validate validates the module properties.
+// Ignore windows paths
 func (engine QPDF) Validate() error {
 	_, err := os.Stat(engine.binPath)
-	if os.IsNotExist(err) {
+	if os.IsNotExist(err) && !strings.Contains(engine.binPath, "\\") {
 		return fmt.Errorf("QPDF binary path does not exist: %w", err)
 	}
 
